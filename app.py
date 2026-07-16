@@ -11,19 +11,76 @@ st.set_page_config(
     layout="centered"
 )
 
-# Thiết kế tiêu đề chính chuyên nghiệp
-st.markdown("<h1 style='text-align: center; color: #FF4B4B;'>🎙️ AI VOICE STUDIO</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #666;'>Trình chuyển đổi văn bản thành giọng nói đa ngôn ngữ chất lượng cao</p>", unsafe_allow_html=True)
-st.divider()
+# Giao diện CSS tùy biến cao cấp (Dark Mode Premium Studio)
+st.markdown("""
+    <style>
+    /* Nền tối chủ đạo cho phòng thu */
+    .stApp {
+        background: linear-gradient(135deg, #0f0c20 0%, #15102a 50%, #060212 100%);
+    }
+    
+    /* Làm đẹp tiêu đề chính */
+    .studio-title {
+        text-align: center; 
+        font-weight: 800; 
+        letter-spacing: 2px;
+        background: linear-gradient(90deg, #ff416c, #ff4b2b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0px;
+    }
+    
+    /* Thiết kế các khung Glassmorphism (Hiệu ứng kính mờ) */
+    div[data-testid="stForm"], .stTextArea, .stSelectbox, div[data-testid="stExpander"] {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Đổi màu chữ toàn bộ trang thành màu sáng để dễ đọc trên nền tối */
+    h1, h2, h3, h4, p, span, label {
+        color: #e0e0ff !important;
+    }
+    
+    /* Tùy biến nút bấm Premium Phát Sáng (Glow Button) */
+    div.stButton > button {
+        background: linear-gradient(45deg, #ff007f, #7f00ff) !important;
+        color: white !important;
+        border: none !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+        letter-spacing: 1px !important;
+        padding: 12px 24px !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease-in-out !important;
+        box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4) !important;
+    }
+    
+    div.stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 25px rgba(127, 0, 255, 0.7) !important;
+    }
+    
+    /* Làm đẹp thanh trượt Slider */
+    div[data-testid="stSlider"] {
+        padding: 10px 0 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Hiển thị tiêu đề hiệu ứng mới
+st.markdown("<h1 class='studio-title'>🎙️ AI VOICE PRO STUDIO</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a0a0d0 !important; font-size:14px; margin-bottom:25px;'>Hệ thống render âm thanh trí tuệ nhân tạo thế hệ mới</p>", unsafe_allow_html=True)
 
 # Khung nhập văn bản chính
 text_input = st.text_area(
     "✍️ Nhập văn bản cần xử lý:", 
     "Xin chào, chào mừng bạn đến với Studio chuyển đổi giọng nói trí tuệ nhân tạo chuyên nghiệp.",
-    height=200
+    height=180
 )
 
-# Xử lý thanh tiến trình đếm ký tự chuyên nghiệp
+# Xử lý thanh tiến trình đếm ký tự
 char_count = len(text_input)
 max_chars = 20000
 progress_percent = min(char_count / max_chars, 1.0)
@@ -31,14 +88,13 @@ progress_percent = min(char_count / max_chars, 1.0)
 if char_count > max_chars:
     st.error(f"⚠️ Đã vượt quá giới hạn: {char_count:,}/{max_chars:,} ký tự. Vui lòng cắt ngắn văn bản!")
 else:
-    # Thanh hiển thị dung lượng ký tự trực quan
     st.progress(progress_percent)
-    st.caption(f"Dung lượng bộ nhớ: **{char_count:,}** trên tổng số **{max_chars:,}** ký tự tối đa.")
+    st.caption(f"Dung lượng bộ nhớ: **{char_count:,}** / **{max_chars:,}** ký tự tối đa.")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Khung cấu hình tùy chọn - Chia cột cân đối
-st.markdown("### 🎛️ TRUNG TÂM ĐIỀU KHIỂN GIỌNG NÓI")
+st.markdown("### 🎛️ BÀN ĐIỀU KHIỂN SÂN KHẤU")
 col_lang, col_voice = st.columns(2)
 
 with col_lang:
@@ -47,23 +103,23 @@ with col_lang:
         ["Tiếng Việt (Vietnamese)", "Tiếng Anh (English)", "Tiếng Hàn (Korean)", "Tiếng Nhật (Japanese)", "Tiếng Trung (Chinese)"]
     )
 
-# Thiết lập danh sách giọng đọc dựa trên bộ lọc ngôn ngữ
+# Thiết lập danh sách giọng đọc rút gọn (Chống lỗi tự động dịch)
 voice_list = []
 if "Tiếng Việt" in lang_option:
-    voice_list = ["Microsoft - HoaiAn (Nữ tự nhiên)", "Microsoft - NamMinh (Nam tự nhiên)", "Microsoft - MinhQuang (Nam trầm)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["HoaiAn (Nữ)", "NamMinh (Nam)", "MinhQuang (Nam trầm)", "Google (Mặc định)"]
 elif "Tiếng Anh" in lang_option:
-    voice_list = ["Microsoft - Aria (Nữ Mỹ)", "Microsoft - Guy (Nam Mỹ)", "Microsoft - Natasha (Nữ Úc)", "Microsoft - Sonia (Nữ Anh)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Aria (Nữ Mỹ)", "Guy (Nam Mỹ)", "Natasha (Nữ Úc)", "Sonia (Nữ Anh)", "Google (Mặc định)"]
 elif "Tiếng Hàn" in lang_option:
-    voice_list = ["Microsoft - SunHi (Nữ)", "Microsoft - InGook (Nam)", "Microsoft - BongJin (Nam vui vẻ)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["SunHi (Nữ)", "InGook (Nam)", "BongJin (Nam)", "Google (Mặc định)"]
 elif "Tiếng Nhật" in lang_option:
-    voice_list = ["Microsoft - Nanami (Nữ)", "Microsoft - Keita (Nam)", "Microsoft - Shiori (Nữ hoạt bát)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Nanami (Nữ)", "Keita (Nam)", "Shiori (Nữ)", "Google (Mặc định)"]
 elif "Tiếng Trung" in lang_option:
-    voice_list = ["Microsoft - Xiaoxiao (Nữ)", "Microsoft - Yunxi (Nam)", "Microsoft - Yunjian (Nam trầm)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Xiaoxiao (Nữ)", "Yunxi (Nam)", "Yunjian (Nam)", "Google (Mặc định)"]
 
 with col_voice:
     voice_option = st.selectbox("👤 Chọn Giọng đọc (Voice Artist):", voice_list)
 
-# Khu vực tinh chỉnh chuyên sâu (Dùng Expander để giao diện gọn gàng)
+# Khu vực tinh chỉnh chuyên sâu
 with st.expander("⚙️ Tùy chỉnh Cao độ & Tốc độ chuyên sâu (Chỉ áp dụng cho giọng Microsoft)"):
     col_speed, col_pitch = st.columns(2)
     with col_speed:
@@ -78,7 +134,7 @@ pitch_str = f"{'+' if pitch >= 0 else ''}{pitch}Hz"
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Nút xử lý trung tâm thiết kế nổi bật nổi bật
-if st.button("🔥 TIẾN HÀNH TẠO GIỌNG NÓI AI", use_container_width=True):
+if st.button("🔥 TIẾN HÀNH KHỞI TẠO GIỌNG NÓI AI", use_container_width=True):
     if text_input.strip() == "":
         st.warning("Vui lòng nhập nội dung văn bản trước khi xử lý!")
     elif char_count > max_chars:
@@ -149,11 +205,8 @@ if st.button("🔥 TIẾN HÀNH TẠO GIỌNG NÓI AI", use_container_width=True
         # Khu vực trả kết quả đầu ra thành phẩm
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
             st.success("🎉 Khởi tạo file âm thanh thành công!")
-            
-            # Khung phát nhạc hiện đại
             st.audio(output_file, format="audio/mp3")
             
-            # Nút tải file bố cục lớn, dễ bấm trên mobile
             with open(output_file, "rb") as f:
                 st.download_button(
                     label="📥 TẢI XUỐNG FILE MP3 THÀNH PHẨM",
@@ -164,4 +217,4 @@ if st.button("🔥 TIẾN HÀNH TẠO GIỌNG NÓI AI", use_container_width=True
                 )
         else:
             st.error("Hệ thống không nhận diện được văn bản hợp lệ. Vui lòng kiểm tra lại cấu trúc câu!")
-        
+                  
