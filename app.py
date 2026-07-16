@@ -4,57 +4,92 @@ import edge_tts
 import os
 from gtts import gTTS
 
-# Cấu hình tiêu đề trang web
-st.title("Ứng Dụng TTS Đa Ngôn Ngữ Nâng Cấp")
-
-# Ô nhập văn bản
-text_input = st.text_area("Nhập văn bản cần đọc:", "Xin chào, chào mừng bạn đến với website của tôi.")
-
-# Thanh điều chỉnh Tốc độ và Cao độ
-st.subheader("🎛️ Cấu hình giọng đọc")
-col1, col2 = st.columns(2)
-
-with col1:
-    speed = st.slider("Tốc độ đọc (Speed):", min_value=-50, max_value=50, value=0, step=5, format="%d%%")
-with col2:
-    pitch = st.slider("Cao độ giọng (Pitch):", min_value=-50, max_value=50, value=0, step=5, format="%d%%")
-
-# Định dạng lại giá trị slider theo chuẩn yêu cầu của edge-tts (Ví dụ: +10% hoặc -5%)
-speed_str = f"{'+' if speed >= 0 else ''}{speed}%"
-pitch_str = f"{'+' if pitch >= 0 else ''}{pitch}%"
-
-# Mục 1: Chọn Ngôn ngữ
-lang_option = st.selectbox(
-    "Chọn Ngôn ngữ (Language):",
-    ["Tiếng Việt (Vietnamese)", "Tiếng Anh (English)", "Tiếng Hàn (Korean)", "Tiếng Nhật (Japanese)", "Tiếng Trung (Chinese)"]
+# Cấu hình trang web (Chế độ giao diện rộng)
+st.set_page_config(
+    page_title="Studio Chuyển Đổi Giọng Nói AI",
+    page_icon="🎙️",
+    layout="centered"
 )
 
-# Cấu hình danh sách giọng đọc theo từng ngôn ngữ chọn ở trên
+# Thiết kế tiêu đề chính chuyên nghiệp
+st.markdown("<h1 style='text-align: center; color: #FF4B4B;'>🎙️ AI VOICE STUDIO</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #666;'>Trình chuyển đổi văn bản thành giọng nói đa ngôn ngữ chất lượng cao</p>", unsafe_allow_html=True)
+st.hr()
+
+# Khung nhập văn bản chính
+text_input = st.text_area(
+    "✍️ Nhập văn bản cần xử lý:", 
+    "Xin chào, chào mừng bạn đến với Studio chuyển đổi giọng nói trí tuệ nhân tạo chuyên nghiệp.",
+    height=200
+)
+
+# Xử lý thanh tiến trình đếm ký tự chuyên nghiệp
+char_count = len(text_input)
+max_chars = 20000
+progress_percent = min(char_count / max_chars, 1.0)
+
+if char_count > max_chars:
+    st.error(f"⚠️ Đã vượt quá giới hạn: {char_count:,}/{max_chars:,} ký tự. Vui lòng cắt ngắn văn bản!")
+else:
+    # Thanh hiển thị dung lượng ký tự trực quan
+    st.progress(progress_percent)
+    st.caption(f"Dung lượng bộ nhớ: **{char_count:,}** trên tổng số **{max_chars:,}** ký tự tối đa.")
+
+st.br()
+
+# Khung cấu hình tùy chọn - Chia cột cân đối
+st.markdown("### 🎛️ TRUNG TÂM ĐIỀU KHIỂN GIỌNG NÓI")
+col_lang, col_voice = st.columns(2)
+
+with col_lang:
+    lang_option = st.selectbox(
+        "🌐 Chọn Ngôn ngữ (Language):",
+        ["Tiếng Việt (Vietnamese)", "Tiếng Anh (English)", "Tiếng Hàn (Korean)", "Tiếng Nhật (Japanese)", "Tiếng Trung (Chinese)"]
+    )
+
+# Thiết lập danh sách giọng đọc dựa trên bộ lọc ngôn ngữ
 voice_list = []
 if "Tiếng Việt" in lang_option:
-    voice_list = ["Microsoft - HoaiAn (Nữ tự nhiên)", "Microsoft - NamMinh (Nam tự nhiên)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Microsoft - HoaiAn (Nữ tự nhiên)", "Microsoft - NamMinh (Nam tự nhiên)", "Microsoft - MinhQuang (Nam trầm)", "Google - Giọng Nữ (Mặc định)"]
 elif "Tiếng Anh" in lang_option:
-    voice_list = ["Microsoft - Aria (Nữ Mỹ)", "Microsoft - Guy (Nam Mỹ)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Microsoft - Aria (Nữ Mỹ)", "Microsoft - Guy (Nam Mỹ)", "Microsoft - Natasha (Nữ Úc)", "Microsoft - Sonia (Nữ Anh)", "Google - Giọng Nữ (Mặc định)"]
 elif "Tiếng Hàn" in lang_option:
-    voice_list = ["Microsoft - SunHi (Nữ)", "Microsoft - InGook (Nam)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Microsoft - SunHi (Nữ)", "Microsoft - InGook (Nam)", "Microsoft - BongJin (Nam vui vẻ)", "Google - Giọng Nữ (Mặc định)"]
 elif "Tiếng Nhật" in lang_option:
-    voice_list = ["Microsoft - Nanami (Nữ)", "Microsoft - Keita (Nam)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Microsoft - Nanami (Nữ)", "Microsoft - Keita (Nam)", "Microsoft - Shiori (Nữ hoạt bát)", "Google - Giọng Nữ (Mặc định)"]
 elif "Tiếng Trung" in lang_option:
-    voice_list = ["Microsoft - Xiaoxiao (Nữ)", "Microsoft - Yunxi (Nam)", "Google - Giọng Nữ (Mặc định)"]
+    voice_list = ["Microsoft - Xiaoxiao (Nữ)", "Microsoft - Yunxi (Nam)", "Microsoft - Yunjian (Nam trầm)", "Google - Giọng Nữ (Mặc định)"]
 
-# Mục 2: Chọn Giọng đọc cụ thể
-voice_option = st.selectbox("Chọn giọng đọc (Voice):", voice_list)
+with col_voice:
+    voice_option = st.selectbox("👤 Chọn Giọng đọc (Voice Artist):", voice_list)
 
-# Xử lý khi nhấn nút "Chuyển thành giọng nói"
-if st.button("Chuyển thành giọng nói"):
+# Khu vực tinh chỉnh chuyên sâu (Dùng Expander để giao diện gọn gàng)
+with st.expander("⚙️ Tùy chỉnh Cao độ & Tốc độ chuyên sâu (Chỉ áp dụng cho giọng Microsoft)"):
+    col_speed, col_pitch = st.columns(2)
+    with col_speed:
+        speed = st.slider("⚡ Tốc độ (Speed):", min_value=-50, max_value=50, value=0, step=5, format="%d%%")
+    with col_pitch:
+        pitch = st.slider("🎵 Cao độ (Pitch):", min_value=-50, max_value=50, value=0, step=5, format="%d%%")
+
+# Định dạng cấu hình âm thanh
+speed_str = f"{'+' if speed >= 0 else ''}{speed}%"
+pitch_str = f"{'+' if pitch >= 0 else ''}{pitch}Hz"
+
+st.br()
+
+# Nút xử lý trung tâm thiết kế nổi bật nổi bật
+if st.button("🔥 TIẾN HÀNH TẠO GIỌNG NÓI AI", use_container_width=True):
     if text_input.strip() == "":
-        st.warning("Vui lòng nhập văn bản!")
+        st.warning("Vui lòng nhập nội dung văn bản trước khi xử lý!")
+    elif char_count > max_chars:
+        st.error("Lỗi: Không thể chuyển đổi do văn bản vượt ngưỡng dung lượng cho phép!")
     else:
         output_file = "output.mp3"
         if os.path.exists(output_file):
-            os.remove(output_file)
+            try: os.remove(output_file)
+            except: pass
             
-        # Xử lý nếu người dùng chọn giọng Google
+        # Xử lý dữ liệu giọng đọc từ Google
         if "Google" in voice_option:
             g_lang = 'vi'
             if "Tiếng Anh" in lang_option: g_lang = 'en'
@@ -62,33 +97,42 @@ if st.button("Chuyển thành giọng nói"):
             elif "Tiếng Nhật" in lang_option: g_lang = 'ja'
             elif "Tiếng Trung" in lang_option: g_lang = 'zh'
             
-            # gTTS chỉ hỗ trợ tốc độ thường hoặc chậm (slow)
             is_slow = True if speed < 0 else False
             
-            with st.spinner("Google đang xử lý..."):
+            with st.spinner("🤖 Hệ thống Google đang render file âm thanh..."):
                 try:
                     tts = gTTS(text=text_input, lang=g_lang, slow=is_slow)
                     tts.save(output_file)
                 except Exception as e:
-                    st.error(f"Lỗi từ Google: {e}")
+                    st.error(f"Lỗi phản hồi từ máy chủ Google: {e}")
                     
-        # Xử lý nếu người dùng chọn giọng Microsoft Edge (Hỗ trợ chỉnh Speed/Pitch sâu)
+        # Xử lý dữ liệu giọng đọc từ Microsoft
         else:
             target_voice = "vi-VN-HoaiAnNeural"
             if "Tiếng Việt" in lang_option:
-                target_voice = "vi-VN-HoaiAnNeural" if "HoaiAn" in voice_option else "vi-VN-NamMinhNeural"
+                if "HoaiAn" in voice_option: target_voice = "vi-VN-HoaiAnNeural"
+                elif "NamMinh" in voice_option: target_voice = "vi-VN-NamMinhNeural"
+                elif "MinhQuang" in voice_option: target_voice = "vi-VN-MinhQuangNeural"
             elif "Tiếng Anh" in lang_option:
-                target_voice = "en-US-AriaNeural" if "Aria" in voice_option else "en-US-GuyNeural"
+                if "Aria" in voice_option: target_voice = "en-US-AriaNeural"
+                elif "Guy" in voice_option: target_voice = "en-US-GuyNeural"
+                elif "Natasha" in voice_option: target_voice = "en-AU-NatashaNeural"
+                elif "Sonia" in voice_option: target_voice = "en-GB-SoniaNeural"
             elif "Tiếng Hàn" in lang_option:
-                target_voice = "ko-KR-SunHiNeural" if "SunHi" in voice_option else "ko-KR-InGookNeural"
+                if "SunHi" in voice_option: target_voice = "ko-KR-SunHiNeural"
+                elif "InGook" in voice_option: target_voice = "ko-KR-InGookNeural"
+                elif "BongJin" in voice_option: target_voice = "ko-KR-BongJinNeural"
             elif "Tiếng Nhật" in lang_option:
-                target_voice = "ja-JP-NanamiNeural" if "Nanami" in voice_option else "ja-JP-KeitaNeural"
+                if "Nanami" in voice_option: target_voice = "ja-JP-NanamiNeural"
+                elif "Keita" in voice_option: target_voice = "ja-JP-KeitaNeural"
+                elif "Shiori" in voice_option: target_voice = "ja-JP-ShioriNeural"
             elif "Tiếng Trung" in lang_option:
-                target_voice = "zh-CN-XiaoxiaoNeural" if "Xiaoxiao" in voice_option else "zh-CN-YunxiNeural"
+                if "Xiaoxiao" in voice_option: target_voice = "zh-CN-XiaoxiaoNeural"
+                elif "Yunxi" in voice_option: target_voice = "zh-CN-YunxiNeural"
+                elif "Yunjian" in voice_option: target_voice = "zh-CN-YunjianNeural"
                 
             async def generate_tts():
                 try:
-                    # Truyền thêm tham số rate (tốc độ) và pitch (cao độ) vào cấu hình
                     communicate = edge_tts.Communicate(
                         text=text_input, 
                         voice=target_voice,
@@ -99,19 +143,25 @@ if st.button("Chuyển thành giọng nói"):
                 except Exception as e:
                     pass
 
-            with st.spinner("Microsoft đang xử lý..."):
+            with st.spinner("⚡ Siêu máy chủ Microsoft đang khởi tạo giọng đọc AI..."):
                 asyncio.run(generate_tts())
             
-        # Hiển thị trình phát nhạc nếu tạo file thành công
+        # Khu vực trả kết quả đầu ra thành phẩm
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+            st.success("🎉 Khởi tạo file âm thanh thành công!")
+            
+            # Khung phát nhạc hiện đại
             st.audio(output_file, format="audio/mp3")
+            
+            # Nút tải file bố cục lớn, dễ bấm trên mobile
             with open(output_file, "rb") as f:
                 st.download_button(
-                    label="Tải file MP3 về máy",
+                    label="📥 TẢI XUỐNG FILE MP3 THÀNH PHẨM",
                     data=f,
-                    file_name="giong_doc.mp3",
-                    mime="audio/mp3"
+                    file_name="ai_studio_voice.mp3",
+                    mime="audio/mp3",
+                    use_container_width=True
                 )
         else:
-            st.error("Không thể tạo giọng đọc. Vui lòng kiểm tra lại văn bản hoặc chuyển sang giọng đọc khác!")
-                  
+            st.error("Hệ thống không nhận diện được văn bản hợp lệ. Vui lòng kiểm tra lại cấu trúc câu!")
+         
