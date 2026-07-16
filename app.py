@@ -2,37 +2,55 @@ import streamlit as st
 import asyncio
 import edge_tts
 import os
+from gtts import gTTS
 
-# Cấu hình tiêu đề trang web
+# Config page title
 st.title("Ứng Dụng Chuyển Văn Bản Thành Giọng Nói")
 
-# Ô nhập văn bản
+# Text area input
 text_input = st.text_area("Nhập văn bản cần đọc:", "Xin chào, chào mừng bạn đến với website của tôi.")
 
-# Chọn ngôn ngữ / Giọng đọc tiếng Việt
+# Select box for voices
 voice_option = st.selectbox(
     "Chọn giọng đọc:",
-    ["vi-VN-HoaiAnNeural (Nữ)", "vi-VN-NamMinhNeural (Nam)"]
+    [
+        "Microsoft - HoaiAn (Nữ tự nhiên)", 
+        "Microsoft - NamMinh (Nam tự nhiên)",
+        "Google - Giọng Nữ (Mặc định)"
+    ]
 )
 
-# Xử lý khi nhấn nút "Chuyển thành giọng nói"
+# Process when button is clicked
 if st.button("Chuyển thành giọng nói"):
     if text_input.strip() == "":
         st.warning("Vui lòng nhập văn bản!")
     else:
-        # Lấy tên giọng đọc chuẩn
-        voice = voice_option.split(" ")[0]
         output_file = "output.mp3"
         
-        # Hàm chạy async để chuyển đổi TTS
-        async def generate_tts():
-            communicate = edge_tts.Communicate(text_input, voice)
-            await communicate.save(output_file)
+        # If user chooses Google Voice
+        if "Google" in voice_option:
+            with st.spinner("Google đang xử lý giọng đọc..."):
+                try:
+                    tts = gTTS(text=text_input, lang='vi')
+                    tts.save(output_file)
+                except Exception as e:
+                    st.error(f"Lỗi từ Google: {e}")
+                    
+        # If user chooses Microsoft Edge Voices
+        else:
+            if "HoaiAn" in voice_option:
+                voice = ["vi-VN-HoaiAnNeural"]
+            else:
+                voice = ["vi-VN-NamMinhNeural"]
+                
+            async def generate_tts():
+                communicate = edge_tts.Communicate(text_input, voice)
+                await communicate.save(output_file)
 
-        with st.spinner("Đang xử lý giọng đọc..."):
-            asyncio.run(generate_tts())
+            with st.spinner("Microsoft đang xử lý giọng đọc..."):
+                asyncio.run(generate_tts())
             
-        # Hiển thị trình phát nhạc và nút tải về
+        # Display audio player and download button
         if os.path.exists(output_file):
             st.audio(output_file, format="audio/mp3")
             with open(output_file, "rb") as f:
@@ -41,5 +59,5 @@ if st.button("Chuyển thành giọng nói"):
                     data=f,
                     file_name="giong_doc.mp3",
                     mime="audio/mp3"
-      )
-  
+        )
+            
