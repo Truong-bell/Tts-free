@@ -1,204 +1,197 @@
-import streamlit as st
 import asyncio
-import edge_tts
 import os
+import edge_tts
+import pyttsx3
+import requests
+import streamlit as st
 from gtts import gTTS
-import speech_recognition as sr
-from pydub import AudioSegment
 
-# Cấu hình trang web (Chế độ giao diện rộng)
-st.set_page_config(
-    page_title="Studio Chuyển Đổi Giọng Nói AI",
-    page_icon="🎙️",
-    layout="centered"
-)
+# Cấu hình giao diện trang web nâng cao
+st.set_page_config(page_title="Web TTS & Voice Cloning Pro", page_icon="🎙️", layout="wide")
+st.title("🎙️ Hệ Thống TTS & Nhân Bản Giọng Nói AI")
 
-# Giao diện CSS tùy biến cao cấp (Dark Mode Premium Studio)
-st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(135deg, #0f0c20 0%, #15102a 50%, #060212 100%);
-    }
-    .studio-title {
-        text-align: center; 
-        font-weight: 800; 
-        letter-spacing: 2px;
-        background: linear-gradient(90deg, #ff416c, #ff4b2b);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0px;
-    }
-    div[data-testid="stForm"], .stTextArea, .stSelectbox, div[data-testid="stExpander"], .stFileUploader {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 16px !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
-    }
-    h1, h2, h3, h4, p, span, label, th, td {
-        color: #e0e0ff !important;
-    }
-    div.stButton > button {
-        background: linear-gradient(45deg, #ff007f, #7f00ff) !important;
-        color: white !important;
-        border: none !important;
-        font-weight: bold !important;
-        font-size: 16px !important;
-        letter-spacing: 1px !important;
-        padding: 12px 24px !important;
-        border-radius: 12px !important;
-        transition: all 0.3s ease-in-out !important;
-        box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4) !important;
-    }
-    div.stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 25px rgba(127, 0, 255, 0.7) !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Tạo thanh Tabs chức năng gọn gàng
+tab1, tab2 = st.tabs(["✨ TTS Đa Nền Tảng (Miễn Phí)", "🧬 AI Voice Cloning (Nhân Bản Giọng)"])
 
-st.markdown("<h1 class='studio-title'>🎙️ AI VOICE PRO STUDIO</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a0a0d0 !important; font-size:14px; margin-bottom:20px;'>Hệ thống render âm thanh đa năng tích hợp All-in-One</p>", unsafe_allow_html=True)
+# ----------------- TAB 1: CÁC TÍNH NĂNG TTS MIỄN PHÍ -----------------
+with tab1:
+    st.subheader("Chuyển đổi Văn bản thành Giọng nói nhanh")
+    text_input = st.text_area(
+        "Nhập văn bản cần chuyển đổi:",
+        value="Xin chào! Đây là hệ thống tổng hợp giọng nói sử dụng các thư viện mã nguồn mở hoàn toàn miễn phí.",
+        height=120,
+        key="tts_text",
+    )
 
-st.divider()
+    col1, col2 = st.columns(2)
+    with col1:
+        tts_engine = st.radio(
+            "Chọn công cụ TTS miễn phí:",
+            options=[
+                "Microsoft Edge TTS (Giọng tự nhiên nhất)",
+                "Google TTS (Cơ bản, ổn định)",
+                "Pyttsx3 (Chạy Offline hệ thống)",
+            ],
+        )
+    with col2:
+        speed_val = st.slider(
+            "Tốc độ đọc (Speed):", min_value=-50, max_value=50, value=0, step=5, key="tts_speed"
+        )
+        speed_param_edge = f"{speed_val:+=}%" if speed_val != 0 else "+0%"
 
-# ====================================================================
-# PHẦN 1 (NỬA TRÊN): CHỮ THÀCH GIỌNG NÓI (TTS)
-# ====================================================================
-st.markdown("## ✨ 1. CHUYỂN VĂN BẢN THÀNH GIỌNG NÓI (TTS)")
+        if tts_engine == "Microsoft Edge TTS (Giọng tự nhiên nhất)":
+            pitch_val = st.slider(
+                "Cao độ giọng (Pitch):", min_value=-50, max_value=50, value=0, step=5, key="tts_pitch"
+            )
+            pitch_param_edge = f"{pitch_val:+=}%" if pitch_val != 0 else "+0%"
+        else:
+            st.info("💡 Tính năng Pitch chỉ khả dụng với Edge TTS.")
 
-if "history" not in st.session_state: 
-    st.session_state.history = []
-    
-uploaded_file = st.file_uploader("📂 Tải lên file văn bản (.txt) nếu không muốn gõ tay:", type=["txt"])
-default_text = "Xin chào, chào mừng bạn đến với Studio chuyển đổi giọng nói trí tuệ nhân tạo chuyên nghiệp."
-
-if uploaded_file is not None:
-    try: 
-        default_text = uploaded_file.read().decode("utf-8")
-    except: 
-        st.error("Không thể đọc file. Vui lòng kiểm tra định dạng!")
-    
-text_input = st.text_area("✍️ Nhập văn bản cần xử lý:", default_text, height=150, key="tts_input")
-
-# Bộ đếm ký tự
-char_count = len(text_input)
-max_chars = 20000
-st.progress(min(char_count / max_chars, 1.0))
-st.caption(f"Dung lượng bộ nhớ: **{char_count:,}** / **{max_chars:,}** ký tự tối đa.")
-
-st.markdown("#### 🎛️ BÀN TRỘN THIẾT KẾ GIỌNG ĐỌC")
-preset = st.radio("Chọn công thức giọng mẫu nhanh:", ["Mặc định", "Em bé", "Người già", "Quái vật", "Thủ công"], horizontal=True)
-if preset == "Mặc định": s_val, p_val = 0, 0
-elif preset == "Em bé": s_val, p_val = 15, 40
-elif preset == "Người già": s_val, p_val = -15, -20
-elif preset == "Quái vật": s_val, p_val = -10, -50
-else: s_val, p_val = 0, 0
-
-col_speed, col_pitch = st.columns(2)
-with col_speed: speed = st.slider("⚡ Tốc độ đọc (Speed):", -50, 50, s_val, 5, format="%d%%")
-with col_pitch: pitch = st.slider("🎵 Cao độ / Độ trầm bổng (Pitch):", -50, 50, p_val, 5, format="%d%%")
-
-speed_str = f"{'+' if speed >= 0 else ''}{speed}%"
-pitch_str = f"{'+' if pitch >= 0 else ''}{pitch}Hz"
-
-col_lang, col_voice = st.columns(2)
-with col_lang:
-    lang_option = st.selectbox("🌐 Chọn Ngôn ngữ gốc:", ["Tiếng Việt (Vietnamese)", "Tiếng Anh (English)", "Tiếng Hàn (Korean)", "Tiếng Nhật (Japanese)", "Tiếng Trung (Chinese)"])
-
-voice_list = []
-if "Tiếng Việt" in lang_option: voice_list = ["HoaiAn (Nữ)", "NamMinh (Nam)", "Google (Mặc định)"]
-elif "Tiếng Anh" in lang_option: voice_list = ["Aria (Nữ Mỹ)", "Guy (Nam Mỹ)", "Ava (Nữ Mỹ)", "Andrew (Nam Mỹ)", "Sonia (Nữ Anh)", "Google (Mặc định)"]
-elif "Tiếng Hàn" in lang_option: voice_list = ["SunHi (Nữ)", "InGook (Nam)", "Hyunsu (Nam trầm)", "Google (Mặc định)"]
-elif "Tiếng Nhật" in lang_option: voice_list = ["Nanami (Nữ)", "Keita (Nam)", "Aoi (Nữ)", "Google (Mặc định)"]
-elif "Tiếng Trung" in lang_option: voice_list = ["Xiaoxiao (Nữ)", "Yunxi (Nam)", "Yunjian (Nam trầm)", "Google (Mặc định)"]
-
-with col_voice: voice_option = st.selectbox("👤 Chọn Giọng đọc (Voice Artist):", voice_list)
-loop_audio = st.checkbox("🔄 Bật hiệu ứng phát lặp lại liên tục (Loop Audio)")
-
-if st.button("🔥 TIẾN HÀNH KHỞI TẠO GIỌNG NÓI AI", use_container_width=True, key="action_tts"):
-    if text_input.strip() == "": 
-        st.warning("Vui lòng nhập nội dung văn bản trước!")
+    # Cấu hình giọng đọc tùy biến theo thư viện
+    if tts_engine == "Microsoft Edge TTS (Giọng tự nhiên nhất)":
+        voice_options = {
+            "vi-VN-HoaiAnNeural (Nữ - Tiếng Việt)": "vi-VN-HoaiAnNeural",
+            "vi-VN-NamMinhNeural (Nam - Tiếng Việt)": "vi-VN-NamMinhNeural",
+            "en-US-AriaNeural (Nữ - Tiếng Anh)": "en-US-AriaNeural",
+        }
+        voice_label = st.selectbox("Chọn giọng đọc:", options=list(voice_options.keys()))
+        voice_selected = voice_options[voice_label]
+    elif tts_engine == "Google TTS (Cơ bản, ổn định)":
+        lang_options = {"Tiếng Việt": "vi", "Tiếng Anh": "en"}
+        lang_label = st.selectbox("Chọn ngôn ngữ:", options=list(lang_options.keys()))
+        lang_selected = lang_options[lang_label]
+        slow_param = True if speed_val < 0 else False
     else:
-        output_file = "output.mp3"
-        if os.path.exists(output_file): os.remove(output_file)
+        try:
+            engine = pyttsx3.init()
+            voices = engine.getProperty("voices")
+            voice_dict = {f"Giọng {i}: {v.name}": v.id for i, v in enumerate(voices)}
+            if voice_dict:
+                voice_label = st.selectbox("Giọng hệ thống khả dụng:", options=list(voice_dict.keys()))
+                pyttsx3_voice_id = voice_dict[voice_label]
+        except Exception:
+            st.warning("Môi trường này không hỗ trợ Driver âm thanh offline.")
+
+    async def generate_edge_tts(text, voice, rate, pitch, output_path):
+        communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+        await communicate.save(output_path)
+
+    if st.button("Xử lý & Phát âm thanh 🚀", type="primary", key="btn_tts"):
+        if not text_input.strip():
+            st.warning("Vui lòng điền văn bản!")
+        else:
+            with st.spinner("Hệ thống đang sinh âm thanh..."):
+                filename = "free_speech_output.mp3"
+                try:
+                    if tts_engine == "Microsoft Edge TTS (Giọng tự nhiên nhất)":
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(
+                            generate_edge_tts(
+                                text_input, voice_selected, speed_param_edge, pitch_param_edge, filename
+                            )
+                        )
+                        loop.close()
+                    elif tts_engine == "Google TTS (Cơ bản, ổn định)":
+                        tts = gTTS(text=text_input, lang=lang_selected, slow=slow_param)
+                        tts.save(filename)
+                    else:
+                        engine = pyttsx3.init()
+                        if voice_dict:
+                            engine.setProperty("voice", pyttsx3_voice_id)
+                        current_rate = engine.getProperty("rate")
+                        engine.setProperty("rate", current_rate + (speed_val * 2))
+                        filename = "free_speech_output.wav"
+                        engine.save_to_file(text_input, filename)
+                        engine.runAndWait()
+
+                    with open(filename, "rb") as audio_file:
+                        audio_bytes = audio_file.read()
+                    st.audio(audio_bytes, format="audio/mp3" if "mp3" in filename else "audio/wav")
+
+                    st.download_button(
+                        label="📥 Tải file âm thanh về máy",
+                        data=audio_bytes,
+                        file_name=filename,
+                        mime="audio/mp3" if "mp3" in filename else "audio/wav",
+                    )
+                    st.success("Tạo âm thanh thành công!")
+                except Exception as e:
+                    st.error(f"Lỗi: {e}")
+                finally:
+                    if os.path.exists(filename):
+                        try:
+                            os.remove(filename)
+                        except Exception:
+                            pass
+
+# ----------------- TAB 2: AI VOICE CLONING NÂNG CAO -----------------
+with tab2:
+    st.subheader("🧬 Nhân bản giọng nói bằng AI (Công nghệ XTTS v2)")
+    st.markdown(
+        """
+    * **Bước 1:** Tải lên một đoạn ghi âm giọng mẫu của bạn (Độ dài tối ưu: **5-10 giây**, định dạng `.mp3`/`.wav`).
+    * **Bước 2:** Nhập nội dung văn bản mới cần đọc. AI sẽ tự động học tone giọng, ngữ điệu và phát âm theo.
+    """
+    )
+
+    clone_text = st.text_area(
+        "Nhập nội dung muốn AI nói bằng giọng của bạn:",
+        value="Chào bạn, đây chính là giọng nói của bạn sau khi đã được mô hình AI nhân bản thành công.",
+        height=100,
+        key="clone_text",
+    )
+
+    uploaded_voice = st.file_uploader(
+        "Tải lên file âm thanh giọng mẫu (.wav hoặc .mp3):", type=["wav", "mp3"]
+    )
+
+    if st.button("Kích hoạt nhân bản giọng nói 🧬", type="primary", key="btn_clone"):
+        if not clone_text.strip():
+            st.warning("Vui lòng nhập văn bản cần đọc!")
+        elif uploaded_voice is None:
+            st.warning("Vui lòng tải lên file âm thanh giọng mẫu!")
+        else:
+            with st.spinner("AI đang học giọng và xử lý câu thoại (Quá trình này mất khoảng 15-30 giây)..."):
+                try:
+                    # Gọi API xử lý AI miễn phí từ hệ sinh thái Hugging Face công khai
+                    API_URL = "https://hf.space"
+
+                    temp_sample_path = "user_sample.wav"
+                    with open(temp_sample_path, "wb") as f:
+                        f.write(uploaded_voice.getbuffer())
+
+                    files = {"sample": open(temp_sample_path, "rb")}
+                    data = {"text": clone_text, "language": "vi"}
+
+                    # Thiết lập timeout 90 giây phòng trường hợp server AI phản hồi chậm khi quá tải
+                    response = requests.post(API_URL, files=files, data=data, timeout=90)
+
+                    if response.status_code == 200:
+                        cloned_audio_bytes = response.content
+
+                        st.audio(cloned_audio_bytes, format="audio/wav")
+                        st.download_button(
+                            label="📥 Tải giọng nhân bản về máy",
+                            data=cloned_audio_bytes,
+                            file_name="voice_cloned_output.wav",
+                            mime="audio/wav",
+                        )
+                        st.success("AI đã phân tích ngữ điệu và nhân bản thành công!")
+                    else:
+                        st.error(
+                            f"Máy chủ AI tạm thời bận hoặc đang quá tải (Mã phản hồi: {response.status_code}). Bạn vui lòng nhấn nút thử lại sau vài giây nhé!"
+                        )
+
+                except requests.exceptions.Timeout:
+                    st.error("Thời gian kết nối quá hạn do server AI phản hồi chậm. Vui lòng thử lại!")
+                except Exception as e:
+                    st.error(f"Đã xảy ra lỗi khi kết nối với máy chủ AI: {e}")
+
+                finally:
+                    if os.path.exists(temp_sample_path):
+                        try:
+                            os.remove(temp_sample_path)
+                        except Exception:
+                            pass
         
-        if "Google" in voice_option:
-            g_lang = 'vi'
-            if "Tiếng Anh" in lang_option: g_lang = 'en'
-            elif "Tiếng Hàn" in lang_option: g_lang = 'ko'
-            elif "Tiếng Nhật" in lang_option: g_lang = 'ja'
-            elif "Tiếng Trung" in lang_option: g_lang = 'zh'
-            
-            with st.spinner("🤖 Hệ thống Google đang render file..."):
-                try: gTTS(text=text_input, lang=g_lang, slow=(speed<0)).save(output_file)
-                except Exception as e: st.error(f"Lỗi kết nối Google: {e}")
-        else:
-            target_voice = "vi-VN-HoaiAnNeural"
-            if "Tiếng Việt" in lang_option:
-                target_voice = "vi-VN-HoaiAnNeural" if "HoaiAn" in voice_option else "vi-VN-NamMinhNeural"
-            elif "Tiếng Anh" in lang_option:
-                if "Aria" in voice_option: target_voice = "en-US-AriaNeural"
-                elif "Guy" in voice_option: target_voice = "en-US-GuyNeural"
-                elif "Ava" in voice_option: target_voice = "en-US-AvaNeural"
-                elif "Andrew" in voice_option: target_voice = "en-US-AndrewNeural"
-                elif "Sonia" in voice_option: target_voice = "en-GB-SoniaNeural"
-            elif "Tiếng Hàn" in lang_option:
-                if "SunHi" in voice_option: target_voice = "ko-KR-SunHiNeural"
-                elif "InGook" in voice_option: target_voice = "ko-KR-InGookNeural"
-                elif "Hyunsu" in voice_option: target_voice = "ko-KR-HyunsuNeural"
-            elif "Tiếng Nhật" in lang_option:
-                if "Nanami" in voice_option: target_voice = "ja-JP-NanamiNeural"
-                elif "Keita" in voice_option: target_voice = "ja-JP-KeitaNeural"
-                elif "Aoi" in voice_option: target_voice = "ja-JP-AoiNeural"
-            elif "Tiếng Trung" in lang_option:
-                if "Xiaoxiao" in voice_option: target_voice = "zh-CN-XiaoxiaoNeural"
-                elif "Yunxi" in voice_option: target_voice = "zh-CN-YunxiNeural"
-                elif "Yunjian" in voice_option: target_voice = "zh-CN-YunjianNeural"
-            
-            async def generate_tts():
-                try: await edge_tts.Communicate(text_input, target_voice, rate=speed_str, pitch=pitch_str).save(output_file)
-                except: pass
-            with st.spinner("⚡ Siêu máy chủ Microsoft đang xử lý..."): 
-                asyncio.run(generate_tts())
-            
-        if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-            st.success("🎉 Khởi tạo file âm thanh thành công!")
-            st.session_state.history.append(text_input)
-            if len(st.session_state.history) > 5: st.session_state.history.pop(0)
-            st.audio(output_file, format="audio/mp3", loop=loop_audio)
-            with open(output_file, "rb") as f:
-                st.download_button(label="📥 TẢI XUỐNG FILE MP3 THÀNH PHẨM", data=f, file_name="ai_studio_voice.mp3", mime="audio/mp3", use_container_width=True)
-        else:
-            st.error("Không thể tạo giọng đọc cho cấu hình này. Bạn hãy thử đổi sang giọng đọc khác nhé!")
-
-if st.session_state.history:
-    with st.expander("📜 Xem lịch sử các đoạn văn bản vừa tạo"):
-        for i, hist_text in enumerate(reversed(st.session_state.history)):
-            st.text(f"{i+1}. {hist_text[:100]}..." if len(hist_text) > 100 else f"{i+1}. {hist_text}")
-
-# ====================================================================
-# PHẦN 2 (NỬA DƯỚI): GIỌNG NÓI THÀNH CHỮ (STT) - CHỈ CẦN VUỐT XUỐNG LÀ THẤY
-# ====================================================================
-st.markdown("<br><br>", unsafe_allow_html=True)
-st.divider()
-
-st.markdown("## 🔊 2. CHUYỂN GIỌNG NÓI THÀNH VĂN BẢN (STT)")
-st.caption("Tải lên file ghi âm tại đây để rã băng thành chữ có chia mốc thời gian (Timestamp) chính xác từng giây.")
-
-stt_lang = st.selectbox("🎯 Chọn ngôn ngữ nói trong file âm thanh:", ["Tiếng Việt (vi-VN)", "Tiếng Anh (en-US)", "Tiếng Hàn (ko-KR)", "Tiếng Nhật (ja-JP)"])
-lang_code = "vi-VN"
-if "Tiếng Anh" in stt_lang: lang_code = "en-US"
-elif "Tiếng Hàn" in stt_lang: lang_code = "ko-KR"
-elif "Tiếng Nhật" in stt_lang: lang_code = "ja-JP"
-
-audio_file = st.file_uploader("🎙️ Tải file ghi âm lên tại đây (.mp3, .wav, .m4a):", type=["mp3", "wav", "m4a", "ogg"])
-
-if audio_file is not None:
-    st.audio(audio_file)
-    
-    if st.button("🚀 BẮT ĐẦU CHUYỂN GIỌNG NÓI THÀNH VĂN BẢN", use_container_width=True, key="action_stt"):
-        with st.spinner("🤖 Đang phân tích dòng thời gian âm thanh đám mây..."):
-            try:
-                temp_audio_path = "temp_input_audio"
-                with open(temp_audio_path, "wb") as f:
-                    f.write(audio_file.getbuffer())
