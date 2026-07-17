@@ -1,6 +1,6 @@
 streamlit
-gTTS
 edge-tts
-requests
-gradio_client
+gradio-client
 python-docx
+requests
+asyncio
