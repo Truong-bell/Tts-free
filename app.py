@@ -5,12 +5,13 @@ import requests
 import streamlit as st
 from gtts import gTTS
 from gradio_client import Client, handle_file
+from docx import Document
 
 # 1. CẤU HÌNH GIAO DIỆN CHÍNH
-st.set_page_config(page_title="Web TTS Pro Max", page_icon="🎙️", layout="wide")
-st.title("🎙️ Siêu Hệ Thống TTS Đa Giọng Đọc & Voice Cloning")
+st.set_page_config(page_title="AI Audio Pro System", page_icon="🎙️", layout="wide")
+st.title("🎙️ Siêu Hệ Thống Âm Thanh AI: TTS, STT & Voice Cloning")
 
-# KHO ID GIỌNG ĐỌC AI MIỄN PHÍ - ĐÃ SỬA LỖI CÚ PHÁP VÀ ĐỦ 10 GIỌNG TIẾNG VIỆT
+# KHO ID GIỌNG ĐỌC AI MIỄN PHÍ - ĐỦ 10 GIỌNG TIẾNG VIỆT
 LANGS_DATA = {
     "Tiếng Việt 🇻🇳": {
         "code": "vi",
@@ -31,23 +32,7 @@ LANGS_DATA = {
         "code": "en",
         "voices": {
             "Nữ - Aria (Phổ thông)": "en-US-AriaNeural",
-            "Nam - Guy (Trầm ấm)": "en-US-GuyNeural",
-            "Nữ - Jenny (Trẻ trung)": "en-US-JennyNeural",
-            "Nam - Brian (Chuyên nghiệp)": "en-US-BrianNeural"
-        }
-    },
-    "Tiếng Hàn Quốc 🇰🇷": {
-        "code": "ko",
-        "voices": {
-            "Nữ - Sun-Hi (Ngọt ngào)": "ko-KR-SunHiNeural",
-            "Nam - In-Gook (Ấm áp)": "ko-KR-InGookNeural"
-        }
-    },
-    "Tiếng Nhật Bản 🇯🇵": {
-        "code": "ja",
-        "voices": {
-            "Nữ - Nanami (Tự nhiên)": "ja-JP-NanamiNeural",
-            "Nam - Keita (Thanh lịch)": "ja-JP-KeitaNeural"
+            "Nam - Guy (Trầm ấm)": "en-US-GuyNeural"
         }
     }
 }
@@ -55,8 +40,7 @@ LANGS_DATA = {
 SOUNDS = {
     "Không thêm hiệu ứng": None,
     "🔔 Tiếng chuông (Ting)": "https://soundjay.com",
-    "👏 Tiếng vỗ tay (Applause)": "https://soundjay.com",
-    "✨ Hiệu ứng lấp lánh": "https://soundjay.com"
+    "👏 Tiếng vỗ tay (Applause)": "https://soundjay.com"
 }
 
 # CÁC HÀM XỬ LÝ ĐỘC LẬP CHỐNG LỖI THỤT LỀ TRÊN MOBILE
@@ -73,13 +57,25 @@ def attach_sound_effect(sound_url, tts_path):
     except:
         return tts_bytes
 
-# PHÂN CHIA GIAO DIỆN TABS
-tab1, tab2 = st.tabs(["✨ TTS Đa Ngôn Ngữ & Kho Giọng", "🧬 AI Voice Cloning (Stable Cloud)"])
+# PHÂN CHIA GIAO DIỆN HỆ THỐNG THÀNH 3 TABS LỚN
+tab1, tab2, tab3 = st.tabs(["✨ TTS & Đọc File Tài Liệu", "🧬 AI Voice Cloning", "📝 STT - Gỡ Băng Âm Thanh"])
 
-# ----------------- TAB 1: TEXT TO SPEECH ĐA GIỌNG ĐỌC -----------------
+# ----------------- TAB 1: TEXT/FILE TO SPEECH ĐA GIỌNG ĐỌC -----------------
 with tab1:
-    st.subheader("Cấu hình Kho Giọng đọc AI Miễn phí")
-    txt1 = st.text_area("Văn bản cần đọc:", value="Xin chào! Hệ thống đã cập nhật đầy đủ mười giọng đọc tiếng Việt miễn phí.", height=100, key="t1")
+    st.subheader("Chuyển đổi Văn bản hoặc File tài liệu thành Giọng nói")
+    
+    # Tính năng File-to-Speech: Tải file tài liệu lên web
+    uploaded_doc = st.file_uploader("Tải lên file văn bản của bạn (.txt hoặc .docx):", type=["txt", "docx"], key="doc_file")
+    
+    extracted_text = "Xin chào! Bạn có thể nhập văn bản trực tiếp hoặc tải file tài liệu lên để tôi đọc tự động."
+    if uploaded_doc is not None:
+        if uploaded_doc.name.endswith(".txt"):
+            extracted_text = str(uploaded_doc.read(), "utf-8")
+        elif uploaded_doc.name.endswith(".docx"):
+            doc = Document(uploaded_doc)
+            extracted_text = "\n".join([p.text for p in doc.paragraphs])
+            
+    txt1 = st.text_area("Nội dung văn bản xử lý:", value=extracted_text, height=120, key="t1")
     col1, col2, col3 = st.columns(3)
     with col1:
         engine_choice = st.radio("Công cụ:", ["Edge TTS (Tự nhiên / LuvVoice)", "Google TTS"], key="eng")
@@ -94,9 +90,9 @@ with tab1:
 
     if st.button("Xử lý & Phát âm thanh TTS 🚀", type="primary", key="btn1"):
         if not txt1.strip():
-            st.warning("Vui lòng nhập nội dung!")
+            st.warning("Vui lòng nhập nội dung hoặc tải file tài liệu lên!")
         else:
-            with st.spinner("Đang xử lý..."):
+            with st.spinner("Đang sinh giọng đọc AI..."):
                 file_path = "output_tts.mp3"
                 r_param, p_param = f"{speed:+=}%", f"{pitch:+=}%"
                 try:
@@ -118,12 +114,10 @@ with tab1:
                     if os.path.exists(file_path):
                         os.remove(file_path)
 
-# ----------------- TAB 2: AI VOICE CLONING (CHUYỂN SANG SERVER XTTS-V2 ỔN ĐỊNH) -----------------
+# ----------------- TAB 2: AI VOICE CLONING (SERVER MIRROR) -----------------
 with tab2:
-    st.subheader("🧬 Nhân bản giọng nói thông qua Gradio Queue")
-    st.info("💡 Hệ thống đã chuyển sang cụm máy chủ XTTS-v2 chính thức, tự xếp hàng chờ thông minh giúp chống sập và chống lỗi kết nối hệ thống.")
-    
-    clone_text = st.text_area("Văn bản muốn AI nói bằng giọng của bạn:", value="Chào bạn, giọng nói của bạn đã được nhân bản thành công trên hệ thống mới.", height=100, key="t2")
+    st.subheader("🧬 Nhân bản giọng nói thông qua Cụm máy chủ Public Mirror")
+    clone_text = st.text_area("Văn bản muốn AI nói bằng giọng của bạn:", value="Chào bạn, giọng nói của bạn đã được nhân bản thành công.", height=100, key="t2")
     uploaded_voice = st.file_uploader("Tải lên file giọng mẫu (5-10s, wav/mp3):", type=["wav", "mp3"], key="up2")
 
     if st.button("Kích hoạt nhân bản giọng nói AI 🧬", type="primary", key="btn2"):
@@ -135,22 +129,8 @@ with tab2:
                 try:
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_voice.getbuffer())
-                    
-                    # Kết nối máy chủ XTTS-v2 chính thức hoạt động cực kỳ ổn định
-                    client = Client("coqui/XTTS-v2")
-                    
-                    # Gọi API theo cấu trúc tham số chuẩn dạng mảng phẳng của XTTS-v2
-                    result = client.predict(
-                        clone_text,               # Văn bản cần nói
-                        "vi",                     # Ngôn ngữ Tiếng Việt
-                        handle_file(temp_path),   # File âm thanh mẫu của bạn
-                        None,                     # Không dùng file mẫu thứ 2
-                        False,                    # Không dùng mic trực tiếp
-                        False,                    # Tắt chế độ rà soát text nâng cao
-                        "",                       # Không truyền text phụ
-                        api_name="/predict"
-                    )
-                    
+                    client = Client("asvany/XTTS-v2")
+                    result = client.predict(clone_text, "vi", handle_file(temp_path), None, False, False, "", api_name="/predict")
                     if result and os.path.exists(result):
                         with open(result, "rb") as f_res:
                             cloned_audio_bytes = f_res.read()
@@ -161,7 +141,55 @@ with tab2:
                         st.error("Server AI không xuất được file kết quả. Bạn vui lòng bấm thử lại.")
                 except Exception as e:
                     st.error(f"Lỗi hàng đợi Server AI: {e}")
-                finally:
+                try:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
+                except:
+                    pass
+
+# ----------------- TAB 3: SPEECH TO TEXT (STT OPENAI WHISPER V3) -----------------
+with tab3:
+    st.subheader("📝 Dịch vụ gỡ băng - Chuyển âm thanh thành Văn bản chính xác")
+    st.info("💡 Hệ thống sử dụng mô hình OpenAI Whisper-Large-V3 siêu chính xác, nhận diện hoàn hảo từng từ tiếng Việt.")
     
+    stt_audio_file = st.file_uploader("Tải lên file âm thanh cần chuyển thành chữ (.mp3, .wav, .m4a):", type=["mp3", "wav", "m4a"], key="stt_up")
+    
+    # Nút bật/tắt lựa chọn hiển thị Timestamp (Mốc thời gian)
+    show_timestamp = st.checkbox("⏰ Hiển thị mốc thời gian (Timestamp) chi tiết theo từng câu", value=True)
+
+    if st.button("Bắt đầu chuyển âm thanh thành chữ 🚀", type="primary", key="btn_stt"):
+        if stt_audio_file is None:
+            st.warning("Vui lòng tải lên file âm thanh trước!")
+        else:
+            with st.spinner("AI đang nghe và gỡ băng chính xác từng chữ (Vui lòng đợi)..."):
+                stt_temp_path = "stt_input_file.wav"
+                try:
+                    with open(stt_temp_path, "wb") as f_stt:
+                        f_stt.write(stt_audio_file.getbuffer())
+                    
+                    # Gọi Client kết nối không gian API Whisper-large-v3 chính thức, hoạt động siêu ổn định
+                    stt_client = Client("openai/whisper-large-v3")
+                    
+                    # Gọi hàm xử lý gỡ băng âm thanh
+                    stt_result = stt_client.predict(
+                        inputs=handle_file(stt_temp_path),
+                        task="transcribe",
+                        api_name="/predict"
+                    )
+                    
+                    # Mô hình Whisper trả về một tuple/list: phần tử [0] là text thuần, phần tử [1] chứa timestamp chi tiết
+                    if stt_result:
+                        final_text_output = ""
+                        if isinstance(stt_result, (list, tuple)) and len(stt_result) >= 2:
+                            final_text_output = stt_result[1] if show_timestamp else stt_result[0]
+                        else:
+                            final_text_output = str(stt_result)
+                            
+                        st.success("Gỡ băng văn bản hoàn tất!")
+                        st.markdown("### 📋 Kết quả văn bản trích xuất:")
+                        st.text_area("Văn bản đầu ra:", value=final_text_output, height=250, key="stt_result_view")
+                        
+                        st.download_button(
+                            label="📥 Tải file văn bản (.txt) về máy",
+                            data=final_text_output,
+                            file_name="stt_result.txt",
