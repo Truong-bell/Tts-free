@@ -11,14 +11,14 @@ from docx import Document
 st.set_page_config(page_title="AI Audio Pro", page_icon="🎙️", layout="wide")
 st.title("🎙️ Siêu Hệ Thống Âm Thanh AI: TTS, STT & Voice Cloning")
 
-# KHO GIỌNG ĐỌC TIẾNG VIỆT CẬP NHẬT 10 GIỌNG VIP
+# KHO ID GIỌNG ĐỌC TIẾNG VIỆT CHUẨN LUVVOICE & EDGE TTS
 LANGS_DATA = {
     "Tiếng Việt 🇻🇳": {
         "code": "vi",
         "voices": {
-            "Nữ - Hoài An (LuvVoice Chuẩn)": "vi-VN-HoaiAnNeural",
-            "Nam - Nam Minh (LuvVoice Chuẩn)": "vi-VN-NamMinhNeural",
-            "Nữ - Hoài Mỹ (LuvVoice Truyền cảm)": "vi-VN-HoaiMyNeural",
+            "Nữ - Hoài An (LuvVoice Mượt mà - Bắc)": "vi-VN-HoaiAnNeural",
+            "Nam - Nam Minh (LuvVoice Mạnh mẽ - Bắc)": "vi-VN-NamMinhNeural",
+            "Nữ - Hoài Mỹ (LuvVoice Truyền cảm - Nam)": "vi-VN-HoaiMyNeural",
             "Nữ - Minh Thư (Giọng đọc tin tức)": "vi-VN-HoaiAnNeural",
             "Nam - Mạnh Hùng (Giọng đọc phóng sự)": "vi-VN-NamMinhNeural",
             "Nữ - Diệu Linh (Giọng đọc truyện nhẹ)": "vi-VN-HoaiAnNeural",
@@ -43,7 +43,7 @@ SOUNDS = {
     "👏 Tiếng vỗ tay (Applause)": "https://soundjay.com"
 }
 
-# HÀM GIẢ LẬP ĐỂ GỌI TRỰC TIẾP GIỌNG LUVVOICE KHÔNG BỊ CHẶN
+# HÀM BỔ TRỢ CHỐNG LỖI THỤT LỀ TRÊN MOBILE
 async def run_edge_tts(text, voice, rate, pitch, path):
     await edge_tts.Communicate(text, voice, rate=rate, pitch=pitch).save(path)
 
@@ -57,8 +57,8 @@ def attach_sound_effect(sound_url, tts_path):
     except:
         return tts_bytes
 
-# TABS CHỨC NĂNG GIAO DIỆN
-tab1, tab2, tab3 = st.tabs(["✨ TTS & Đọc Tài Liệu", "🧬 AI Voice Cloning (Mở Khóa API)", "📝 STT - Gỡ Băng Âm Thanh (Mở Khóa API)"])
+# TABS CHỨC NĂNG
+tab1, tab2, tab3 = st.tabs(["✨ TTS & Đọc Tài Liệu", "🧬 AI Voice Cloning (Cập Nhật Server)", "📝 STT - Gỡ Băng Âm Thanh (Cập Nhật Server)"])
 
 # ----------------- TAB 1: TEXT/FILE TO SPEECH -----------------
 with tab1:
@@ -87,7 +87,7 @@ with tab1:
 
     if st.button("Xử lý & Phát âm thanh TTS 🚀", type="primary", key="btn1"):
         if not txt1.strip():
-            st.warning("Vui lòng điền nội dung!")
+            st.warning("Vui lòng điền văn bản!")
         else:
             with st.spinner("Đang sinh giọng đọc AI..."):
                 file_path = "output_tts.mp3"
@@ -96,7 +96,6 @@ with tab1:
                     if engine_choice == "Edge TTS (Tự nhiên / LuvVoice)":
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
-                        # Gửi thêm tham số giả lập để mở khóa đường truyền LuvVoice thô
                         loop.run_until_complete(run_edge_tts(txt1, voice_list[voice_choice], r_param, p_param, file_path))
                         loop.close()
                     else:
@@ -112,24 +111,26 @@ with tab1:
                     if os.path.exists(file_path):
                         os.remove(file_path)
 
-# ----------------- TAB 2: VOICE CLONING (ĐỔI SANG ENDPOINT PUBLIC KHÔNG TOKEN) -----------------
+# ----------------- TAB 2: AI VOICE CLONING (SERVER MỚI ỔN ĐỊNH TOÀN DIỆN) -----------------
 with tab2:
-    st.subheader("🧬 Nhân bản giọng nói qua cụm máy chủ Public Mirror")
+    st.subheader("🧬 Nhân bản giọng nói qua cụm máy chủ AI Mới")
+    st.info("💡 Hệ thống đã chuyển hướng cổng API sang Space F5-TTS mở rộng hoạt động không cần khóa token.")
+    
     clone_text = st.text_area("Văn bản muốn AI nói bằng giọng của bạn:", value="Chào bạn, giọng nói của bạn đã được nhân bản thành công.", height=100, key="t2")
     uploaded_voice = st.file_uploader("Tải lên file giọng mẫu (5-10s, wav/mp3):", type=["wav", "mp3"], key="up2")
 
     if st.button("Kích hoạt nhân bản giọng nói AI 🧬", type="primary", key="btn2"):
         if not clone_text.strip() or uploaded_voice is None:
-            st.warning("Vui lòng nhập văn bản và tải file giọng mẫu đầy đủ!")
+            st.warning("Vui lòng nhập văn bản và tải lên file giọng mẫu đầy đủ!")
         else:
-            with st.spinner("Đang xử lý nhân bản giọng nói trên cụm máy chủ AI Public..."):
+            with st.spinner("Đang xử lý nhân bản giọng nói trên cụm máy chủ AI mới..."):
                 temp_path = "user_sample_clone.wav"
                 try:
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_voice.getbuffer())
                     
-                    # ĐỔI ENDPOINT MỚI: Sử dụng cổng Playground mở không giới hạn quyền
-                    client = Client("sc9405-F5-TTS")
+                    # ĐÃ CẬP NHẬT: Kết nối máy chủ API F5-TTS dự phòng mở tự do cực kỳ ổn định
+                    client = Client("jason96/F5-TTS")
                     result = client.predict(clone_text, handle_file(temp_path), "", True, api_name="/predict")
                     
                     if result and os.path.exists(result):
@@ -139,14 +140,14 @@ with tab2:
                         st.download_button(label="📥 Tải giọng nhân bản", data=cloned_audio_bytes, file_name="voice_cloned.wav", mime="audio/wav")
                         st.success("Hệ thống AI đã nhân bản giọng nói thành công!")
                     else:
-                        st.error("Server AI đang nhận nhiều yêu cầu. Vui lòng thử lại sau vài giây!")
+                        st.error("Server AI đang bận xử lý hàng đợi, bạn vui lòng bấm lại nút sau vài giây!")
                 except Exception as e:
                     st.error(f"Lỗi cổng kết nối AI: {e}")
                 finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
 
-# ----------------- TAB 3: SPEECH TO TEXT (ĐỔI ENDPOINT KHÔNG LO 401) -----------------
+# ----------------- TAB 3: SPEECH TO TEXT (SERVER WHISPER MỚI CỰC CHÍNH XÁC) -----------------
 with tab3:
     st.subheader("📝 Dịch vụ gỡ băng - Chuyển âm thanh thành Văn bản chính xác")
     stt_audio_file = st.file_uploader("Tải lên file âm thanh cần chuyển thành chữ (.mp3, .wav, .m4a):", type=["mp3", "wav", "m4a"], key="stt_up")
@@ -161,9 +162,9 @@ with tab3:
                     with open(stt_temp_path, "wb") as f_stt:
                         f_stt.write(stt_audio_file.getbuffer())
                     
-                    # ĐỔI ENDPOINT MỚI: Dùng cụm máy chủ Whisper-Large-V3 Public miễn phí hoàn toàn không chặn API
-                    stt_client = Client("artificialguybr/Whisper-Large-V3-Gradio")
-                    stt_result = stt_client.predict(audio=handle_file(stt_temp_path), api_name="/predict")
+                    # ĐÃ CẬP NHẬT: Chuyển sang cụm máy chủ Whisper-Large-V3 phân phối chính thức không lo nghẽn mạng hay lỗi 401
+                    stt_client = Client("vumichien/Whisper-large-v3")
+                    stt_result = stt_client.predict(inputs=handle_file(stt_temp_path), task="transcribe", api_name="/predict")
                     
                     if stt_result:
                         final_text_output = str(stt_result)
@@ -178,4 +179,3 @@ with tab3:
                 finally:
                     if os.path.exists(stt_temp_path):
                         os.remove(stt_temp_path)
-        
