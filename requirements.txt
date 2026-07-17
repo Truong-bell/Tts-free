@@ -2,3 +2,4 @@ streamlit
 edge-tts
 gradio-client
 python-docx
+SpeechRecognition
