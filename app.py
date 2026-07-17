@@ -80,19 +80,17 @@ with tab1:
                 "Google TTS (Cơ bản, ổn định)"
             ],
         )
-        # Chọn hiệu ứng âm thanh lồng ghép vào trước file TTS
         sound_choice = st.selectbox("Chọn hiệu ứng âm thanh đi kèm:", options=list(SOUND_EFFECTS.keys()))
         sound_url = SOUND_EFFECTS[sound_choice]
         
     with col2:
-        # TÍNH NĂNG MỚI: Chọn ngôn ngữ hệ thống
         lang_choice = st.selectbox("Chọn ngôn ngữ muốn đọc:", options=list(LANGUAGES_CONFIG.keys()))
         selected_lang_data = LANGUAGES_CONFIG[lang_choice]
         
-        # Hiển thị danh sách giọng tương ứng nếu dùng Edge
         if tts_engine == "Microsoft Edge TTS (Giọng tự nhiên nhất)":
             voice_label = st.selectbox("Chọn giọng đọc AI:", options=list(selected_lang_data["edge_voices"].keys()))
             voice_selected = selected_lang_data["edge_voices"][voice_label]
+            lang_selected = selected_lang_data["code"]
         else:
             lang_selected = selected_lang_data["code"]
             st.info(f"💡 Google TTS tự động chọn mã vùng phát âm: **{lang_selected}**")
@@ -121,10 +119,9 @@ with tab1:
         if not text_input.strip():
             st.warning("Vui lòng điền văn bản!")
         else:
-            with st.spinner("Hệ thống đang sinh âm thanh và ghép hiệu ứng..."):
+            with st.spinner("Hệ thống đang sinh âm thanh..."):
                 filename = "free_speech_output.mp3"
                 try:
-                    # 1. Khởi tạo và lưu giọng nói TTS
                     if tts_engine == "Microsoft Edge TTS (Giọng tự nhiên nhất)":
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
@@ -141,12 +138,9 @@ with tab1:
                     with open(filename, "rb") as audio_file:
                         tts_bytes = audio_file.read()
 
-                    # 2. Xử lý gộp âm thanh nếu chọn thêm hiệu ứng nền đi kèm
                     if sound_url:
                         try:
-                            # Tải byte của hiệu ứng âm thanh từ URL trực tuyến công khai
                             fx_bytes = requests.get(sound_url).content
-                            # Ghép byte của Hiệu ứng âm thanh vào TRƯỚC byte của giọng nói TTS
                             final_audio_bytes = fx_bytes + tts_bytes
                         except Exception:
                             st.warning("Không thể tải hiệu ứng âm thanh đi kèm. Hệ thống sẽ chỉ phát giọng đọc gốc.")
@@ -154,7 +148,6 @@ with tab1:
                     else:
                         final_audio_bytes = tts_bytes
 
-                    # 3. Xuất kết quả ra widget phát nhạc trên giao diện Web
                     st.audio(final_audio_bytes, format="audio/mp3")
 
                     st.download_button(
@@ -233,3 +226,13 @@ with tab2:
                                 label="📥 Tải giọng nhân bản về máy",
                                 data=cloned_audio_bytes,
                                 file_name="voice_cloned_output.wav",
+                                mime="audio/wav",
+                            )
+                            st.success("AI đã phân tích ngữ điệu và nhân bản thành công!")
+                        else:
+                            st.error("Dữ liệu trả về từ Server AI không đúng định dạng âm thanh.")
+                    else:
+                        st.error(f"Máy chủ AI không phản hồi thích hợp (Mã phản hồi: {response.status_code}). Vui lòng thử lại!")
+
+                except requests.exceptions.Timeout:
+        
