@@ -2,3 +2,4 @@ streamlit
 gTTS
 edge-tts
 requests
+gradio_client
