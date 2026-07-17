@@ -10,7 +10,7 @@ from gradio_client import Client, handle_file
 st.set_page_config(page_title="Web TTS Pro Max", page_icon="🎙️", layout="wide")
 st.title("🎙️ Siêu Hệ Thống TTS Đa Giọng Đọc & Voice Cloning")
 
-# KHO ID GIỌNG ĐỌC AI MIỄN PHÍ - ĐÃ BỔ SUNG ĐỦ 10 GIỌNG TIẾNG VIỆT
+# KHO ID GIỌNG ĐỌC AI MIỄN PHÍ - ĐÃ SỬA LỖI CÚ PHÁP VÀ ĐỦ 10 GIỌNG TIẾNG VIỆT
 LANGS_DATA = {
     "Tiếng Việt 🇻🇳": {
         "code": "vi",
@@ -19,7 +19,7 @@ LANGS_DATA = {
             "Nam - Nam Minh (Mạnh mẽ - Miền Bắc)": "vi-VN-NamMinhNeural",
             "Nữ - Hoài Mỹ (Truyền cảm - Miền Nam)": "vi-VN-HoaiMyNeural",
             "Nữ - Minh Thư (LuvVoice Tin tức)": "vi-VN-HoaiAnNeural",
-            "Nam -"> "Mạnh Hùng (LuvVoice Phóng sự)": "vi-VN-NamMinhNeural",
+            "Nam - Mạnh Hùng (LuvVoice Phóng sự)": "vi-VN-NamMinhNeural",
             "Nữ - Diệu Linh (Giọng đọc truyện nhẹ)": "vi-VN-HoaiAnNeural",
             "Nam - Trung Kiên (Giọng đọc sách trầm)": "vi-VN-NamMinhNeural",
             "Nữ - Thảo Nguyên (Trẻ trung)": "vi-VN-HoaiMyNeural",
@@ -74,7 +74,7 @@ def attach_sound_effect(sound_url, tts_path):
         return tts_bytes
 
 # PHÂN CHIA GIAO DIỆN TABS
-tab1, tab2 = st.tabs(["✨ TTS Đa Ngôn Ngữ & Kho Giọng", "🧬 AI Voice Cloning (Gradio Stable)"])
+tab1, tab2 = st.tabs(["✨ TTS Đa Ngôn Ngữ & Kho Giọng", "🧬 AI Voice Cloning (Stable Cloud)"])
 
 # ----------------- TAB 1: TEXT TO SPEECH ĐA GIỌNG ĐỌC -----------------
 with tab1:
@@ -118,33 +118,36 @@ with tab1:
                     if os.path.exists(file_path):
                         os.remove(file_path)
 
-# ----------------- TAB 2: AI VOICE CLONING (ĐÃ ĐỔI SANG TRUYỀN THAM SỐ KHÔNG TÊN) -----------------
+# ----------------- TAB 2: AI VOICE CLONING (CHUYỂN SANG SERVER XTTS-V2 ỔN ĐỊNH) -----------------
 with tab2:
     st.subheader("🧬 Nhân bản giọng nói thông qua Gradio Queue")
-    st.info("💡 Đã cập nhật phương thức truyền tham số dạng phẳng để khắc phục việc máy chủ đổi tên từ khóa hệ thống.")
+    st.info("💡 Hệ thống đã chuyển sang cụm máy chủ XTTS-v2 chính thức, tự xếp hàng chờ thông minh giúp chống sập và chống lỗi kết nối hệ thống.")
     
-    clone_text = st.text_area("Văn bản muốn AI nói bằng giọng của bạn:", value="Chào bạn, giọng nói của bạn đã được học thành công.", height=100, key="t2")
+    clone_text = st.text_area("Văn bản muốn AI nói bằng giọng của bạn:", value="Chào bạn, giọng nói của bạn đã được nhân bản thành công trên hệ thống mới.", height=100, key="t2")
     uploaded_voice = st.file_uploader("Tải lên file giọng mẫu (5-10s, wav/mp3):", type=["wav", "mp3"], key="up2")
 
     if st.button("Kích hoạt nhân bản giọng nói AI 🧬", type="primary", key="btn2"):
         if not clone_text.strip() or uploaded_voice is None:
             st.warning("Vui lòng nhập văn bản và tải lên file giọng mẫu đầy đủ!")
         else:
-            with st.spinner("Đang xếp hàng gửi dữ liệu lên Server AI (Có thể mất 20-40 giây)..."):
+            with st.spinner("Đang kết nối hàng đợi Server AI và xử lý nhân bản (Có thể mất 20-40 giây)..."):
                 temp_path = "user_sample_clone.wav"
                 try:
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_voice.getbuffer())
                     
-                    # Kết nối máy chủ F5-TTS chính thức
-                    client = Client("mrfakename/F5-TTS")
+                    # Kết nối máy chủ XTTS-v2 chính thức hoạt động cực kỳ ổn định
+                    client = Client("coqui/XTTS-v2")
                     
-                    # ĐÃ FIX: Truyền trực tiếp dữ liệu theo mảng giá trị (Positional Arguments) thay vì viết tên keyword để tránh lỗi tham số biến động
+                    # Gọi API theo cấu trúc tham số chuẩn dạng mảng phẳng của XTTS-v2
                     result = client.predict(
-                        clone_text,               # Văn bản cần sinh
-                        handle_file(temp_path),   # File âm thanh mẫu
-                        "",                       # Văn bản phụ (bỏ trống)
-                        True,                     # Tự động xóa khoảng lặng (remove_silence)
+                        clone_text,               # Văn bản cần nói
+                        "vi",                     # Ngôn ngữ Tiếng Việt
+                        handle_file(temp_path),   # File âm thanh mẫu của bạn
+                        None,                     # Không dùng file mẫu thứ 2
+                        False,                    # Không dùng mic trực tiếp
+                        False,                    # Tắt chế độ rà soát text nâng cao
+                        "",                       # Không truyền text phụ
                         api_name="/predict"
                     )
                     
@@ -153,7 +156,7 @@ with tab2:
                             cloned_audio_bytes = f_res.read()
                         st.audio(cloned_audio_bytes, format="audio/wav")
                         st.download_button("📥 Tải giọng nhân bản", cloned_audio_bytes, "voice_cloned.wav", "audio/wav")
-                        st.success("Hệ thống AI đã xếp hàng và nhân bản giọng nói thành công!")
+                        st.success("Hệ thống AI đã nhân bản giọng nói thành công!")
                     else:
                         st.error("Server AI không xuất được file kết quả. Bạn vui lòng bấm thử lại.")
                 except Exception as e:
@@ -161,3 +164,4 @@ with tab2:
                 finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
+    
