@@ -1,6 +1,3 @@
 streamlit
 edge-tts
 gradio-client
-python-docx
-requests
-asyncio
