@@ -64,10 +64,9 @@ tab1, tab2, tab3 = st.tabs(["✨ TTS & Đọc File Tài Liệu", "🧬 AI Voice 
 with tab1:
     st.subheader("Chuyển đổi Văn bản hoặc File tài liệu thành Giọng nói")
     
-    # Tính năng File-to-Speech: Tải file tài liệu lên web
     uploaded_doc = st.file_uploader("Tải lên file văn bản của bạn (.txt hoặc .docx):", type=["txt", "docx"], key="doc_file")
-    
     extracted_text = "Xin chào! Bạn có thể nhập văn bản trực tiếp hoặc tải file tài liệu lên để tôi đọc tự động."
+    
     if uploaded_doc is not None:
         if uploaded_doc.name.endswith(".txt"):
             extracted_text = str(uploaded_doc.read(), "utf-8")
@@ -106,7 +105,7 @@ with tab1:
 
                     final_bytes = attach_sound_effect(SOUNDS[fx_choice], file_path)
                     st.audio(final_bytes, format="audio/mp3")
-                    st.download_button("📥 Tải file âm thanh về máy", final_bytes, "tts_pro.mp3", "audio/mp3")
+                    st.download_button(label="📥 Tải file âm thanh về máy", data=final_bytes, file_name="tts_pro.mp3", mime="audio/mp3")
                     st.success("Tạo âm thanh hoàn tất!")
                 except Exception as e:
                     st.error(f"Lỗi: {e}")
@@ -135,26 +134,22 @@ with tab2:
                         with open(result, "rb") as f_res:
                             cloned_audio_bytes = f_res.read()
                         st.audio(cloned_audio_bytes, format="audio/wav")
-                        st.download_button("📥 Tải giọng nhân bản", cloned_audio_bytes, "voice_cloned.wav", "audio/wav")
+                        st.download_button(label="📥 Tải giọng nhân bản", data=cloned_audio_bytes, file_name="voice_cloned.wav", mime="audio/wav")
                         st.success("Hệ thống AI đã nhân bản giọng nói thành công!")
                     else:
                         st.error("Server AI không xuất được file kết quả. Bạn vui lòng bấm thử lại.")
                 except Exception as e:
                     st.error(f"Lỗi hàng đợi Server AI: {e}")
-                try:
+                finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
-                except:
-                    pass
 
-# ----------------- TAB 3: SPEECH TO TEXT (STT OPENAI WHISPER V3) -----------------
+# ----------------- TAB 3: SPEECH TO TEXT (STT OPENAI WHISPER V3 - ĐÃ FIX) -----------------
 with tab3:
     st.subheader("📝 Dịch vụ gỡ băng - Chuyển âm thanh thành Văn bản chính xác")
     st.info("💡 Hệ thống sử dụng mô hình OpenAI Whisper-Large-V3 siêu chính xác, nhận diện hoàn hảo từng từ tiếng Việt.")
     
     stt_audio_file = st.file_uploader("Tải lên file âm thanh cần chuyển thành chữ (.mp3, .wav, .m4a):", type=["mp3", "wav", "m4a"], key="stt_up")
-    
-    # Nút bật/tắt lựa chọn hiển thị Timestamp (Mốc thời gian)
     show_timestamp = st.checkbox("⏰ Hiển thị mốc thời gian (Timestamp) chi tiết theo từng câu", value=True)
 
     if st.button("Bắt đầu chuyển âm thanh thành chữ 🚀", type="primary", key="btn_stt"):
@@ -167,21 +162,14 @@ with tab3:
                     with open(stt_temp_path, "wb") as f_stt:
                         f_stt.write(stt_audio_file.getbuffer())
                     
-                    # Gọi Client kết nối không gian API Whisper-large-v3 chính thức, hoạt động siêu ổn định
                     stt_client = Client("openai/whisper-large-v3")
+                    stt_result = stt_client.predict(inputs=handle_file(stt_temp_path), task="transcribe", api_name="/predict")
                     
-                    # Gọi hàm xử lý gỡ băng âm thanh
-                    stt_result = stt_client.predict(
-                        inputs=handle_file(stt_temp_path),
-                        task="transcribe",
-                        api_name="/predict"
-                    )
-                    
-                    # Mô hình Whisper trả về một tuple/list: phần tử [0] là text thuần, phần tử [1] chứa timestamp chi tiết
                     if stt_result:
                         final_text_output = ""
+                        # Nếu kết quả trả về chứa cả văn bản gốc và timestamp (dạng list/tuple)
                         if isinstance(stt_result, (list, tuple)) and len(stt_result) >= 2:
-                            final_text_output = stt_result[1] if show_timestamp else stt_result[0]
+                            final_text_output = str(stt_result[1]) if show_timestamp else str(stt_result[0])
                         else:
                             final_text_output = str(stt_result)
                             
@@ -189,7 +177,13 @@ with tab3:
                         st.markdown("### 📋 Kết quả văn bản trích xuất:")
                         st.text_area("Văn bản đầu ra:", value=final_text_output, height=250, key="stt_result_view")
                         
-                        st.download_button(
-                            label="📥 Tải file văn bản (.txt) về máy",
-                            data=final_text_output,
-                            file_name="stt_result.txt",
+                        # ĐÃ FIX: Sửa lại định dạng đóng ngoặc đơn chuẩn xác cho nút tải file văn bản
+                        st.download_button(label="📥 Tải file văn bản (.txt) về máy", data=final_text_output, file_name="stt_result.txt", mime="text/plain")
+                    else:
+                        st.error("Server AI không xuất dữ liệu văn bản. Vui lòng thử lại!")
+                except Exception as e:
+                    st.error(f"Lỗi hệ thống STT: {e}")
+                finally:
+                    if os.path.exists(stt_temp_path):
+                        os.remove(stt_temp_path)
+    
