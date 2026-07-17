@@ -19,7 +19,7 @@ LANGS_DATA = {
             "Nam - Nam Minh (Mạnh mẽ - Miền Bắc)": "vi-VN-NamMinhNeural",
             "Nữ - Hoài Mỹ (Truyền cảm - Miền Nam)": "vi-VN-HoaiMyNeural",
             "Nữ - Minh Thư (LuvVoice Tin tức)": "vi-VN-HoaiAnNeural",
-            "Nam - Mạnh Hùng (LuvVoice Phóng sự)": "vi-VN-NamMinhNeural",
+            "Nam -"> "Mạnh Hùng (LuvVoice Phóng sự)": "vi-VN-NamMinhNeural",
             "Nữ - Diệu Linh (Giọng đọc truyện nhẹ)": "vi-VN-HoaiAnNeural",
             "Nam - Trung Kiên (Giọng đọc sách trầm)": "vi-VN-NamMinhNeural",
             "Nữ - Thảo Nguyên (Trẻ trung)": "vi-VN-HoaiMyNeural",
@@ -118,10 +118,10 @@ with tab1:
                     if os.path.exists(file_path):
                         os.remove(file_path)
 
-# ----------------- TAB 2: AI VOICE CLONING (GRADIO STABLE) -----------------
+# ----------------- TAB 2: AI VOICE CLONING (ĐÃ ĐỔI SANG TRUYỀN THAM SỐ KHÔNG TÊN) -----------------
 with tab2:
     st.subheader("🧬 Nhân bản giọng nói thông qua Gradio Queue")
-    st.info("💡 Hệ thống tự động xếp hàng chờ (Queue) thông minh trên cụm máy chủ AI từ xa giúp giảm thiểu lỗi từ chối kết nối.")
+    st.info("💡 Đã cập nhật phương thức truyền tham số dạng phẳng để khắc phục việc máy chủ đổi tên từ khóa hệ thống.")
     
     clone_text = st.text_area("Văn bản muốn AI nói bằng giọng của bạn:", value="Chào bạn, giọng nói của bạn đã được học thành công.", height=100, key="t2")
     uploaded_voice = st.file_uploader("Tải lên file giọng mẫu (5-10s, wav/mp3):", type=["wav", "mp3"], key="up2")
@@ -136,12 +136,15 @@ with tab2:
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_voice.getbuffer())
                     
+                    # Kết nối máy chủ F5-TTS chính thức
                     client = Client("mrfakename/F5-TTS")
+                    
+                    # ĐÃ FIX: Truyền trực tiếp dữ liệu theo mảng giá trị (Positional Arguments) thay vì viết tên keyword để tránh lỗi tham số biến động
                     result = client.predict(
-                        gen_text=clone_text,
-                        ref_audio_input=handle_file(temp_path),
-                        ref_text="",
-                        remove_silence=True,
+                        clone_text,               # Văn bản cần sinh
+                        handle_file(temp_path),   # File âm thanh mẫu
+                        "",                       # Văn bản phụ (bỏ trống)
+                        True,                     # Tự động xóa khoảng lặng (remove_silence)
                         api_name="/predict"
                     )
                     
@@ -150,7 +153,7 @@ with tab2:
                             cloned_audio_bytes = f_res.read()
                         st.audio(cloned_audio_bytes, format="audio/wav")
                         st.download_button("📥 Tải giọng nhân bản", cloned_audio_bytes, "voice_cloned.wav", "audio/wav")
-                        st.success("Hệ thống AI đã nhân bản giọng nói thành công!")
+                        st.success("Hệ thống AI đã xếp hàng và nhân bản giọng nói thành công!")
                     else:
                         st.error("Server AI không xuất được file kết quả. Bạn vui lòng bấm thử lại.")
                 except Exception as e:
@@ -158,4 +161,3 @@ with tab2:
                 finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
-        
