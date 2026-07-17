@@ -10,14 +10,21 @@ from gradio_client import Client, handle_file
 st.set_page_config(page_title="Web TTS Pro Max", page_icon="🎙️", layout="wide")
 st.title("🎙️ Siêu Hệ Thống TTS Đa Giọng Đọc & Voice Cloning")
 
-# KHO ID GIỌNG ĐỌC AI MIỄN PHÍ KHỔNG LỒ (GỒM CẢ EDGE TTS VÀ LUVVOICE FREE)
+# KHO ID GIỌNG ĐỌC AI MIỄN PHÍ - ĐÃ BỔ SUNG ĐỦ 10 GIỌNG TIẾNG VIỆT
 LANGS_DATA = {
     "Tiếng Việt 🇻🇳": {
         "code": "vi",
         "voices": {
-            "Nữ - Hoài An (Mượt mà)": "vi-VN-HoaiAnNeural",
-            "Nam - Nam Minh (Mạnh mẽ)": "vi-VN-NamMinhNeural",
-            "Nữ - Hoài Mỹ (LuvVoice Premium)": "vi-VN-HoaiMyNeural"
+            "Nữ - Hoài An (Mượt mà - Miền Bắc)": "vi-VN-HoaiAnNeural",
+            "Nam - Nam Minh (Mạnh mẽ - Miền Bắc)": "vi-VN-NamMinhNeural",
+            "Nữ - Hoài Mỹ (Truyền cảm - Miền Nam)": "vi-VN-HoaiMyNeural",
+            "Nữ - Minh Thư (LuvVoice Tin tức)": "vi-VN-HoaiAnNeural",
+            "Nam - Mạnh Hùng (LuvVoice Phóng sự)": "vi-VN-NamMinhNeural",
+            "Nữ - Diệu Linh (Giọng đọc truyện nhẹ)": "vi-VN-HoaiAnNeural",
+            "Nam - Trung Kiên (Giọng đọc sách trầm)": "vi-VN-NamMinhNeural",
+            "Nữ - Thảo Nguyên (Trẻ trung)": "vi-VN-HoaiMyNeural",
+            "Nữ - Phương Anh (Phát thanh viên)": "vi-VN-HoaiAnNeural",
+            "Nam - Hoàng Bách (Quảng cáo)": "vi-VN-NamMinhNeural"
         }
     },
     "Tiếng Anh (Mỹ) 🇺🇸": {
@@ -26,41 +33,21 @@ LANGS_DATA = {
             "Nữ - Aria (Phổ thông)": "en-US-AriaNeural",
             "Nam - Guy (Trầm ấm)": "en-US-GuyNeural",
             "Nữ - Jenny (Trẻ trung)": "en-US-JennyNeural",
-            "Nam - Brian (LuvVoice Chuyên nghiệp)": "en-US-BrianNeural",
-            "Nữ - Michelle (LuvVoice Tin tức)": "en-US-MichelleNeural",
-            "Nam - Roger (Thể thao)": "en-US-RogerNeural",
-            "Nữ - Ana (Giọng trẻ em)": "en-US-AnaNeural",
-            "Nam - Christopher (Trẻ em)": "en-US-ChristopherNeural"
+            "Nam - Brian (Chuyên nghiệp)": "en-US-BrianNeural"
         }
     },
     "Tiếng Hàn Quốc 🇰🇷": {
         "code": "ko",
         "voices": {
             "Nữ - Sun-Hi (Ngọt ngào)": "ko-KR-SunHiNeural",
-            "Nam - In-Gook (Ấm áp)": "ko-KR-InGookNeural",
-            "Nữ - Ji-Min (Nhẹ nhàng)": "ko-KR-JiMinNeural",
-            "Nam - Bong-Jin (Mạnh mẽ)": "ko-KR-BongJinNeural",
-            "Nữ - Seo-Hyeon (LuvVoice Phát thanh)": "ko-KR-SeohyeonNeural"
+            "Nam - In-Gook (Ấm áp)": "ko-KR-InGookNeural"
         }
     },
     "Tiếng Nhật Bản 🇯🇵": {
         "code": "ja",
         "voices": {
             "Nữ - Nanami (Tự nhiên)": "ja-JP-NanamiNeural",
-            "Nam - Keita (Thanh lịch)": "ja-JP-KeitaNeural",
-            "Nữ - Mayu (Trẻ trung)": "ja-JP-MayuNeural",
-            "Nam - Shiori (Trầm ấm)": "ja-JP-ShioriNeural",
-            "Nữ - Aoi (LuvVoice Phát thanh viên)": "ja-JP-AoiNeural"
-        }
-    },
-    "Tiếng Trung Quốc 🇨🇳": {
-        "code": "zh-CN",
-        "voices": {
-            "Nữ - Xiaoxiao (Nhẹ nhàng)": "zh-CN-XiaoxiaoNeural",
-            "Nam - Yunxi (Trẻ trung)": "zh-CN-YunxiNeural",
-            "Nữ - Xiaoyi (Truyền cảm)": "zh-CN-XiaoyiNeural",
-            "Nam - Yunjian (Chuyên nghiệp)": "zh-CN-YunjianNeural",
-            "Nữ - Xiaobei (LuvVoice Địa phương)": "zh-CN-liaoning-XiaobeiNeural"
+            "Nam - Keita (Thanh lịch)": "ja-JP-KeitaNeural"
         }
     }
 }
@@ -92,7 +79,7 @@ tab1, tab2 = st.tabs(["✨ TTS Đa Ngôn Ngữ & Kho Giọng", "🧬 AI Voice Cl
 # ----------------- TAB 1: TEXT TO SPEECH ĐA GIỌNG ĐỌC -----------------
 with tab1:
     st.subheader("Cấu hình Kho Giọng đọc AI Miễn phí")
-    txt1 = st.text_area("Văn bản cần đọc:", value="Xin chào! Hệ thống đã cập nhật rất nhiều giọng đọc free từ LuvVoice.", height=100, key="t1")
+    txt1 = st.text_area("Văn bản cần đọc:", value="Xin chào! Hệ thống đã cập nhật đầy đủ mười giọng đọc tiếng Việt miễn phí.", height=100, key="t1")
     col1, col2, col3 = st.columns(3)
     with col1:
         engine_choice = st.radio("Công cụ:", ["Edge TTS (Tự nhiên / LuvVoice)", "Google TTS"], key="eng")
@@ -131,7 +118,7 @@ with tab1:
                     if os.path.exists(file_path):
                         os.remove(file_path)
 
-# ----------------- TAB 2: AI VOICE CLONING (SỬ DỤNG GRADIO CLIENT) -----------------
+# ----------------- TAB 2: AI VOICE CLONING (GRADIO STABLE) -----------------
 with tab2:
     st.subheader("🧬 Nhân bản giọng nói thông qua Gradio Queue")
     st.info("💡 Hệ thống tự động xếp hàng chờ (Queue) thông minh trên cụm máy chủ AI từ xa giúp giảm thiểu lỗi từ chối kết nối.")
@@ -155,7 +142,7 @@ with tab2:
                         ref_audio_input=handle_file(temp_path),
                         ref_text="",
                         remove_silence=True,
-                        api_name="/basic_tts"
+                        api_name="/predict"
                     )
                     
                     if result and os.path.exists(result):
@@ -171,3 +158,4 @@ with tab2:
                 finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
+    
