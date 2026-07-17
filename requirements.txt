@@ -1,3 +1,5 @@
 streamlit
-edge-tts
 gTTS
+edge-tts
+pyttsx3
+requests
